@@ -20,10 +20,7 @@ class WalletFactory extends Factory
      */
     public function definition(): array
     {
-        $user = User::factory()->create();
-        
         return [
-            'owner_id' => $user->id,
             'balance' => fake()->randomNumber()
         ];
     }

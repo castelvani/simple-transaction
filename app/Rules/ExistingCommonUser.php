@@ -21,6 +21,6 @@ class ExistingCommonUser implements ValidationRule
             ->exists();
 
         if(!$user)
-            $fail('Only common users can execute transfers');
+            $fail('Only common users can execute transfer');
     }
 }

@@ -3,12 +3,14 @@
 namespace App\Repositories;
 
 use App\Interfaces\WalletRepositoryInterface;
-use App\Models\User;
+use App\Models\Wallet;
 
 class WalletRepository implements WalletRepositoryInterface
 {
-  public static function balance(User $user): float
+  public static function updateBalance(Wallet $wallet, float $value): void
   {
-    return 1;
+    $wallet->update([
+      'balance' => $wallet->balance - $value
+    ]);
   }
 }

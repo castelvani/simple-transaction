@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('cpf')->unique();
-            $table->string('cnpj')->unique();
+            $table->string('cpf')->nullable()->unique();
+            $table->string('cnpj')->nullable()->unique();
             $table->string('type');
             $table->rememberToken();
             $table->timestamps();

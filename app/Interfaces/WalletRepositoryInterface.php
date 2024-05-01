@@ -2,9 +2,9 @@
 
 namespace App\Interfaces;
 
-use App\Models\User;
+use App\Models\Wallet;
 
 interface WalletRepositoryInterface
 {
-  public static function balance(User $user): float;
+  public static function updateBalance(Wallet $wallet, float $value): void;
 }
