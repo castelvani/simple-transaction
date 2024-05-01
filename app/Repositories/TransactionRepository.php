@@ -8,9 +8,9 @@ use App\Models\Transaction;
 
 class TransactionRepository implements TransactionRepositoryInterface
 {
-  public static function processTransaction(array $payload): void
+  public static function processTransaction(array $payload): Transaction
   {
-    Transaction::create([
+    return Transaction::create([
       'payer_id' => $payload['payer_id'],
       'payee_id' => $payload['payee_id'],
       'value'    => $payload['value'],
@@ -20,11 +20,15 @@ class TransactionRepository implements TransactionRepositoryInterface
 
   public static function executeTransaction(Transaction $transaction): void
   {
-    // executa / finaliza
+    $transaction->update([
+      'status' => TransactionStatusEnum::Finished
+    ]);
   }
 
   public static function transactionReversal(Transaction $transaction): void
   {
-    // estorna
+    $transaction->update([
+      'status' => TransactionStatusEnum::Reversed
+    ]);
   }
 }

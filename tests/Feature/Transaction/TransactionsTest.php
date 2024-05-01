@@ -4,9 +4,11 @@ namespace Test\Feature\Transaction;
 
 use App\Enums\TransactionStatusEnum;
 use App\Enums\UserTypeEnum;
+use App\Jobs\ProcessTransactionsJob;
 use App\Models\User;
 use App\Models\Wallet;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 

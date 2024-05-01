@@ -7,10 +7,24 @@ use App\Models\Wallet;
 
 class WalletRepository implements WalletRepositoryInterface
 {
-  public static function updateBalance(Wallet $wallet, float $value): void
+  public static function debitBalance(Wallet $wallet, float $value): void
   {
     $wallet->update([
       'balance' => $wallet->balance - $value
+    ]);
+  }
+
+  public static function creditBalance(Wallet $wallet, float $value): void
+  {
+    $wallet->update([
+      'balance' => $wallet->balance + $value
+    ]);
+  }
+
+  public static function reverseBalance(Wallet $wallet, float $value): void
+  {
+    $wallet->update([
+      'balance' => $wallet->balance + $value
     ]);
   }
 }

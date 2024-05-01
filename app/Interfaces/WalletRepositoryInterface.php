@@ -6,5 +6,7 @@ use App\Models\Wallet;
 
 interface WalletRepositoryInterface
 {
-  public static function updateBalance(Wallet $wallet, float $value): void;
+  public static function debitBalance(Wallet $wallet, float $value): void;
+  public static function creditBalance(Wallet $wallet, float $value): void;
+  public static function reverseBalance(Wallet $wallet, float $value): void;
 }
