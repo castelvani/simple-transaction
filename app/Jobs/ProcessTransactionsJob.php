@@ -1,8 +1,8 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Enums\TransactionStatusEnum;
 use App\Models\Transaction;
 use App\Repositories\TransactionRepository;
 use App\Repositories\WalletRepository;
