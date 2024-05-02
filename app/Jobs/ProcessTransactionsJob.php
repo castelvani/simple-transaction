@@ -6,6 +6,7 @@ use App\Enums\TransactionStatusEnum;
 use App\Models\Transaction;
 use App\Repositories\TransactionRepository;
 use App\Repositories\WalletRepository;
+use App\Services\NotificationAvailabilityService;
 use App\Services\TransactionAuthorizationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,7 +24,8 @@ class ProcessTransactionsJob implements ShouldQueue
     public function __construct(
         private TransactionRepository $transactionRepository,
         private WalletRepository $walletRepository,
-        public Transaction $transaction
+        public Transaction $transaction,
+        public TransactionAuthorizationService $transactionAuthorizationService
     ) {
     }
 
@@ -32,14 +34,22 @@ class ProcessTransactionsJob implements ShouldQueue
      */
     public function handle(): void
     {
-        $response = (new TransactionAuthorizationService)->validateTransaction();
+        $response = $this->transactionAuthorizationService->validateTransaction();
 
-        if ($response['message'] != 'Autorizado') {
+        if ($response) {
             $this->transactionRepository->executeTransaction($this->transaction);
             $this->walletRepository->creditBalance($this->transaction->payee, $this->transaction->value);
+            
+            NotifyTransactionsJob::dispatch($this->transaction, new NotificationAvailabilityService());
         } else {
             $this->transactionRepository->transactionReversal($this->transaction);
             $this->walletRepository->reverseBalance($this->transaction->payer, $this->transaction->value);
         }
+    }
+
+    public function failed(): void
+    {
+        $this->transactionRepository->transactionReversal($this->transaction);
+        $this->walletRepository->reverseBalance($this->transaction->payer, $this->transaction->value);
     }
 }

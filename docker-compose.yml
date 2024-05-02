@@ -38,6 +38,14 @@ services:
         working_dir: /application
         volumes:
             - '.:/application'
-        command: php artisan queue:listen --tries=3
+        command: php artisan queue:listen
         depends_on:
             - php-fpm
+
+    mailhog:
+        image: 'mailhog/mailhog:latest'
+        tty: true
+        ports:
+            - '1025:1025'
+            - '8025:8025'
+        restart: on-failure

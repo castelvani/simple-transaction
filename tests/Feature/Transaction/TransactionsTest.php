@@ -5,8 +5,12 @@ namespace Test\Feature\Transaction;
 use App\Enums\TransactionStatusEnum;
 use App\Enums\UserTypeEnum;
 use App\Jobs\ProcessTransactionsJob;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Repositories\TransactionRepository;
+use App\Repositories\WalletRepository;
+use App\Services\TransactionAuthorizationService;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -20,10 +24,11 @@ class TransactionsTest extends TestCase
   #[Test]
   public function transaction_processing_test()
   {
-    $this->withoutExceptionHandling();
+    Queue::fake();
+
     $commonUser = User::factory()->create([
       'type' => UserTypeEnum::Common,
-      'cpf' => fake()->unique()->numerify('###########')
+      'cpf'  => fake()->unique()->numerify('###########')
     ]);
 
     $payerWallet = Wallet::factory()->create([
@@ -61,6 +66,84 @@ class TransactionsTest extends TestCase
       'owner_id' => $payerWallet->owner_id,
       'balance'  => ($payerWallet->balance - $value)
     ]);
+
+    $transaction = Transaction::first();
+
+    (new ProcessTransactionsJob(new TransactionRepository, new WalletRepository, $transaction, new TransactionAuthorizationService()))
+      ->withFakeQueueInteractions()
+      ->handle();
+
+    $this->assertDatabaseHas('transactions', [
+      'payer_id' => $payerWallet->id,
+      'payee_id' => $payeeWallet->id,
+      'value'    => $value,
+      'status'   => TransactionStatusEnum::Finished
+    ]);
+  }
+
+  #[Test]
+  public function transaction_reversed_balance_on_failed_processing_test()
+  {
+    Queue::fake();
+
+    $commonUser = User::factory()->create([
+      'type' => UserTypeEnum::Common,
+      'cpf'  => fake()->unique()->numerify('###########')
+    ]);
+
+    $payerWallet = Wallet::factory()->create([
+      'balance'  => 5000,
+      'owner_id' => $commonUser->id
+    ]);
+
+    $merchantUser = User::factory()->create([
+      'type' => UserTypeEnum::Merchant,
+      'cnpj' => fake()->unique()->numerify('##############'),
+    ]);
+
+    $payeeWallet = Wallet::factory()->create([
+      'owner_id' => $merchantUser->id
+    ]);
+
+    $value = 1000;
+
+    $response = $this->post(route('transfer'), [
+      'value' => $value,
+      'payer' => $payerWallet->id,
+      'payee' => $payeeWallet->id,
+    ]);
+
+    $response->assertOk();
+
+    $this->assertDatabaseHas('transactions', [
+      'payer_id' => $payerWallet->id,
+      'payee_id' => $payeeWallet->id,
+      'value'    => $value,
+      'status'   => TransactionStatusEnum::Processing
+    ]);
+
+    $this->assertDatabaseHas('wallets', [
+      'owner_id' => $payerWallet->owner_id,
+      'balance'  => ($payerWallet->balance - $value)
+    ]);
+
+    $transaction = Transaction::first();
+
+    (new ProcessTransactionsJob(new TransactionRepository, new WalletRepository, $transaction, new TransactionAuthorizationService($baseUri = 'https://run.mocky.io/')))
+      ->withFakeQueueInteractions()
+      ->handle();
+
+    $this->assertDatabaseHas('transactions', [
+      'payer_id' => $payerWallet->id,
+      'payee_id' => $payeeWallet->id,
+      'value'    => $value,
+      'status'   => TransactionStatusEnum::Reversed
+    ]);
+
+    $this->assertDatabaseHas('wallets', [
+      'owner_id' => $payerWallet->owner_id,
+      'balance'  => $payerWallet->balance
+    ]);
   }
 
   #[Test]
@@ -68,7 +151,7 @@ class TransactionsTest extends TestCase
   {
     $commonUser = User::factory()->create([
       'type' => UserTypeEnum::Common,
-      'cpf' => fake()->unique()->numerify('###########')
+      'cpf'  => fake()->unique()->numerify('###########')
     ]);
 
     $payerWallet = Wallet::factory()->create([

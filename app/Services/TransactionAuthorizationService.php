@@ -12,6 +12,8 @@ class TransactionAuthorizationService
 
   public function validateTransaction()
   {
-    return Http::get($this->baseUri . '5794d450-d2e2-4412-8131-73d0293ac1cc')->json();
+    $response = Http::get($this->baseUri . '5794d450-d2e2-4412-8131-73d0293ac1cc')->json();
+    if (isset($response['message']) && $response['message'] == 'Autorizado') return true;
+    return false;
   }
 }

@@ -7,13 +7,15 @@ use App\Jobs\ProcessTransactionsJob;
 use App\Models\User;
 use App\Repositories\TransactionRepository;
 use App\Repositories\WalletRepository;
+use App\Services\TransactionAuthorizationService;
 use Illuminate\Http\Response;
 
 class TransactionController extends Controller
 {
     public function __construct(
         private TransactionRepository $transactionRepository,
-        private WalletRepository $walletRepository
+        private WalletRepository $walletRepository,
+        public TransactionAuthorizationService $transactionAuthorizationService
     ) {
     }
 
@@ -30,14 +32,19 @@ class TransactionController extends Controller
         $payload = [
             'payer_id' => $payer->wallet->id,
             'payee_id' => $payee->wallet->id,
-            'value' => $request->value
+            'value'    => $request->value
         ];
 
         $this->walletRepository->debitBalance($payer->wallet, $request->value);
 
         $transaction = $this->transactionRepository->processTransaction($payload);
-        
-        ProcessTransactionsJob::dispatch($this->transactionRepository, $this->walletRepository, $transaction);
+
+        ProcessTransactionsJob::dispatch(
+            $this->transactionRepository,
+            $this->walletRepository,
+            $transaction,
+            $this->transactionAuthorizationService
+        );
 
         return response('Processing transaction', Response::HTTP_OK);
     }
