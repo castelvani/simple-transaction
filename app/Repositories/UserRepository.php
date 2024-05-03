@@ -8,13 +8,14 @@ use App\Models\User;
 
 class UserRepository implements UserRepositoryInterface
 {
-  public static function register(User $user): void
+  public static function register(array $payload): User
   {
-    echo 'a';
+    return User::create($payload);
   }
 
-  public static function login(string $email, string $password): void
+  public static function login(array $payload): User
   {
-    
+    return User::where('email', $payload['email'])
+      ->first();
   }
 }

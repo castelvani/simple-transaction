@@ -35,4 +35,16 @@ class TransactionRequest extends FormRequest
             ],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'value.required' => 'The value field is required.',
+            'value.numeric' => 'The value must be a number.',
+            'payer.required' => 'The payer field is required.',
+            'payer.existing_common_user' => 'The selected payer is invalid.', // Custom message for ExistingCommonUser rule
+            'payee.required' => 'The payee field is required.',
+            'payee.exists' => 'The selected payee is invalid.',
+        ];
+    }
 }

@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Wallet extends Model
 {
     use HasFactory;
+
+    protected $table = 'wallets';
     
     protected $fillable = [
         'owner_id',

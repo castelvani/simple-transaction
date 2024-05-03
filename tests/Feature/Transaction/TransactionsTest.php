@@ -45,9 +45,14 @@ class TransactionsTest extends TestCase
       'owner_id' => $merchantUser->id
     ]);
 
+    $commonUserToken = $commonUser->createToken('token')->plainTextToken;
+    
     $value = 1000;
 
-    $response = $this->post(route('transfer'), [
+    $response = $this->withHeaders([
+      'Authorization' => 'Bearer ' . $commonUserToken,
+      'Accept'        => 'application/json'
+    ])->post(route('transfer'), [
       'value' => $value,
       'payer' => $payerWallet->id,
       'payee' => $payeeWallet->id,
@@ -105,9 +110,13 @@ class TransactionsTest extends TestCase
       'owner_id' => $merchantUser->id
     ]);
 
+    $commonUserToken = $commonUser->createToken('token')->plainTextToken;
     $value = 1000;
 
-    $response = $this->post(route('transfer'), [
+    $response = $this->withHeaders([
+      'Authorization' => 'Bearer ' . $commonUserToken,
+      'Accept'        => 'application/json'
+    ])->post(route('transfer'), [
       'value' => $value,
       'payer' => $payerWallet->id,
       'payee' => $payeeWallet->id,
@@ -168,8 +177,14 @@ class TransactionsTest extends TestCase
       'owner_id' => $merchantUser->id
     ]);
 
-    $response = $this->post(route('transfer'), [
-      'value' => 1000,
+    $commonUserToken = $commonUser->createToken('token')->plainTextToken;
+    $value = 1000;
+
+    $response = $this->withHeaders([
+      'Authorization' => 'Bearer ' . $commonUserToken,
+      'Accept'        => 'application/json'
+    ])->post(route('transfer'), [
+      'value' => $value,
       'payer' => $payerWallet->id,
       'payee' => $payeeWallet->id,
     ]);
@@ -198,13 +213,19 @@ class TransactionsTest extends TestCase
       'owner_id' => $commonUser->id
     ]);
 
-    $response = $this->post(route('transfer'), [
-      'value' => 1000,
+    $merchantUserToken = $merchantUser->createToken('token')->plainTextToken;
+    $value = 1000;
+
+    $response = $this->withHeaders([
+      'Authorization' => 'Bearer ' . $merchantUserToken,
+      'Accept'        => 'application/json'
+    ])->post(route('transfer'), [
+      'value' => $value,
       'payer' => $payerWallet->id,
       'payee' => $payeeWallet->id,
     ]);
-
-    $response->assertSessionHasErrors('payer', 'Only common users can execute transfer');
+    
+    $response->assertStatus(422);
   }
 
   #[Test]
@@ -228,8 +249,14 @@ class TransactionsTest extends TestCase
       'owner_id' => $secondCommonUser->id
     ]);
 
-    $response = $this->post(route('transfer'), [
-      'value' => 1000,
+    $firstCommonUserToken = $firstCommonUser->createToken('token')->plainTextToken;
+    $value = 1000;
+
+    $response = $this->withHeaders([
+      'Authorization' => 'Bearer ' . $firstCommonUserToken,
+      'Accept'        => 'application/json'
+    ])->post(route('transfer'), [
+      'value' => $value,
       'payer' => $payerWallet->id,
       'payee' => $payeeWallet->id,
     ]);

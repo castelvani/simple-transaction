@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Http\Controllers;
@@ -9,6 +10,7 @@ use App\Models\User;
 use App\Repositories\TransactionRepository;
 use App\Repositories\WalletRepository;
 use App\Services\TransactionAuthorizationService;
+use Exception;
 use Illuminate\Http\Response;
 
 class TransactionController extends Controller
@@ -22,31 +24,35 @@ class TransactionController extends Controller
 
     public function transfer(TransactionRequest $request): Response
     {
-        $payer = User::whereId($request->payer)->first();
+        try {
+            $payer = User::whereId($request->payer)->first();
 
-        if ($payer->wallet->balance < $request->value) {
-            return response('Insufficient balance', Response::HTTP_PAYMENT_REQUIRED);
+            if ($payer->wallet->balance < $request->value) {
+                return response('Insufficient balance', Response::HTTP_PAYMENT_REQUIRED);
+            }
+
+            $payee = User::whereId($request->payee)->first();
+
+            $payload = [
+                'payer_id' => $payer->wallet->id,
+                'payee_id' => $payee->wallet->id,
+                'value'    => $request->value
+            ];
+
+            $this->walletRepository->debitBalance($payer->wallet, $request->value);
+
+            $transaction = $this->transactionRepository->processTransaction($payload);
+
+            ProcessTransactionsJob::dispatch(
+                $this->transactionRepository,
+                $this->walletRepository,
+                $transaction,
+                $this->transactionAuthorizationService
+            );
+
+            return response('Processing transaction', Response::HTTP_OK);
+        } catch (Exception $ex) {
+            return response($ex->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        $payee = User::whereId($request->payee)->first();
-
-        $payload = [
-            'payer_id' => $payer->wallet->id,
-            'payee_id' => $payee->wallet->id,
-            'value'    => $request->value
-        ];
-
-        $this->walletRepository->debitBalance($payer->wallet, $request->value);
-
-        $transaction = $this->transactionRepository->processTransaction($payload);
-
-        ProcessTransactionsJob::dispatch(
-            $this->transactionRepository,
-            $this->walletRepository,
-            $transaction,
-            $this->transactionAuthorizationService
-        );
-
-        return response('Processing transaction', Response::HTTP_OK);
     }
 }
